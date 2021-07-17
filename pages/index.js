@@ -23,6 +23,29 @@ function ProfileSidebar(props) {
   )
 }
 
+function ProfileRelationsBox(props) {
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smallTitle">
+        {props.title} ({props.items.length})
+      </h2>
+
+      <ul>
+        {props.items.map((itemAtual) => {
+          return (
+            <li key={itemAtual.id}>
+              <a target="_blank" href={`https://github.com/${itemAtual.login}`}>
+                <img src={itemAtual.avatar_url} />
+                <span>{itemAtual.login}</span>
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+    </ProfileRelationsBoxWrapper>
+  )
+}
+
 export default function Home() {
   const githubUser = 'will-felipe-souza';
   const [comunidades, setComunidades] = React.useState([{
@@ -38,6 +61,18 @@ export default function Home() {
     'marcobrunodev',
     'felipefialho'
   ];
+
+  const [seguindo, setSeguindo] = React.useState([]);
+
+  React.useEffect(() => {
+    fetch('https://api.github.com/users/will-felipe-souza/following')
+    .then((respostaDoServidor) => {
+      return respostaDoServidor.json();
+    })
+    .then((respostaCompleta) => {
+      setSeguindo(respostaCompleta); 
+    })
+  }, [])
 
   return (
     <>
@@ -92,6 +127,8 @@ export default function Home() {
           </Box>
         </div>
         <div className="profileRelationsArea" style={{ gridArea: 'profileRelationsArea' }}>
+          <ProfileRelationsBox title="Seguindo" items={seguindo} />
+
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
               Comunidades ({comunidades.length})
