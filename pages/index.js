@@ -1,4 +1,7 @@
 import React from 'react';
+import nookies from 'nookies';
+import jwt from 'jsonwebtoken';
+import { useRouter } from 'next/router';
 
 import MainGrid from '../src/components/MainGrid';
 import Box from '../src/components/Box';
@@ -46,8 +49,8 @@ function ProfileRelationsBox(props) {
   )
 }
 
-export default function Home() {
-  const githubUser = 'will-felipe-souza';
+export default function Home(props) {
+  const githubUser = props.githubUser;
   const [comunidades, setComunidades] = React.useState([]);
   const pessoasFavoritas = [
     'juunegreiros',
@@ -57,16 +60,27 @@ export default function Home() {
     'marcobrunodev',
     'felipefialho'
   ];
-
+  const rounter = useRouter();
   const [seguindo, setSeguindo] = React.useState([]);
 
   React.useEffect(() => {
-    fetch('https://api.github.com/users/will-felipe-souza/following')
+    fetch(`https://api.github.com/users/${githubUser}/following`)
     .then((respostaDoServidor) => {
       return respostaDoServidor.json();
     })
     .then((respostaCompleta) => {
-      setSeguindo(respostaCompleta); 
+      try {
+        let resumoSeguindo = [];
+        respostaCompleta.map((itemAtual) => {
+          if(resumoSeguindo.length <= 5) {
+            resumoSeguindo.push(itemAtual)
+          }
+        })
+        setSeguindo(resumoSeguindo); 
+      } catch(err) {
+        alert('Message: Usuário Github inválido')
+        rounter.push('/login')
+      }
     })
 
     // API GraphQL
@@ -202,4 +216,35 @@ export default function Home() {
       </MainGrid>
     </>
   )
+}
+
+
+export async function getServerSideProps(context) {
+  const cookies = nookies.get(context); 
+  const token = cookies.USER_TOKEN;
+  const { githubUser } = jwt.decode(token);
+
+  console.log(token)
+
+  const { isAuthenticated } = await fetch('https://alurakut.vercel.app/api/auth', {
+    headers: {
+      Authorization: token
+    }
+  })
+  .then((resposta) => resposta.json());
+
+  if(!isAuthenticated) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      }
+    }
+  }
+
+  return {
+    props: {
+      githubUser
+    }, // will be passed to the page component as props
+  }
 }
